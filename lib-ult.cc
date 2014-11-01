@@ -10,15 +10,26 @@
 #define gettid()  syscall(SYS_gettid)
 
 using namespace std;
-//compile with g++ -o myprog main.c lib-ult.c -lpthread
-// myprog is the name of my project, main.c can be the professor's test file
-//10-11 thursday, PEARSON 145
+
+/*
+* uthread: a bad threading library using C/C++.
+* By Coleman Jackson
+* Directions: compile using make
+*
+*/
 
 typedef struct threadInfo
 {
   ucontext_t *context;
   double time_run;
 }thread_info;
+
+//semaphore to make sure running kernel threads are less than max kernel threads
+sem_t thread_lock;
+//semaphore to make sure only one thread is accessing the queue at a time
+sem_t queue_lock;
+//priority queue to store the structs
+priority_queue<thread_info, vector<thread_info>, CompareThreadInfo> pq;
 
 //This class tells the priority queue how to compare objects
 class CompareThreadInfo {
@@ -30,18 +41,12 @@ public:
   }
 };
 
-//semaphore that makes sure running kernel threads are less than max kernel threads
-sem_t thread_lock;
-//semaphore that makes sure only one thread is accessing the queue at a time
-sem_t queue_lock;
-//priority queue to store the structs
-priority_queue<thread_info, vector<thread_info>, CompareThreadInfo> pq;
 
 void system_init(int max_number_of_klt)
 {
-    //initialize this semaphore with the value of max_number_of_klt so that it will keep track of how many threads are currently running andif we are allowed to start anymore running
-    sem_init(&thread_lock, 0, max_number_of_klt);
-    //initialize this semaphore with the value 1, because we only want 1 thread at a time to access the queue
+ //initialize this semaphore with the value of max_number_of_klt so that it will keep track of how many threads are currently running andif we are allowed to start anymore running
+  sem_init(&thread_lock, 0, max_number_of_klt);
+  //initialize this semaphore with the value 1, because we only want 1 thread at a time to access the queue
   sem_init(&queue_lock, 0, 1);
 }
 
@@ -56,8 +61,17 @@ int uthread_create(void (*func)())
     //create a process that will run func when it is called with"setcontext()" or "swapcontext()"
   process->uc_stack.ss_sp = malloc(16384);
   process->uc_stack.ss_size = 16384;
+
+
+
+  //IF MALLOC ABOVE EVER RETURNS NULL, YOU FAILED SO RETURN -1
+  if(thread == NULL || process == NULL)
+  {
+    return -1;
+
+  }
+
   makecontext(process, func);
-    //IF MALLOC ABOVE EVER RETURNS NULL, YOU FAILED SO RETURN -1
 
     //Add the new process to the queue
   thread->context = process;
@@ -89,7 +103,7 @@ void uthread_yield()
     contxt->uc_stack.ss_size = 16384;
     getcontext(contxt);
 
-        //add the current context to a struct
+    //add the current context to a struct
     thread_info *current_thread;
     current_thread = (thread_info*)malloc(sizeof(thread_info));
     current_thread->context = contxt;
@@ -99,10 +113,10 @@ void uthread_yield()
     ret = getrusage(who, &usage);
     current_thread.time-run = usage->ru_stime->tv_sec;
 
-        //add the current context back to the priority queue
+    //add the current context back to the priority queue
     pq.push(current_thread);
 
-        //set the context to the one that came from the priority queue
+    //set the context to the one that came from the priority queue
     setcontext(shortest->context);
   }
 }
@@ -111,7 +125,6 @@ void uthread_exit()
 {
     //signal that a user thread has stopped and kill the current thread
   sem_post(&thread_lock);
-  kill(getid(), SIGKILL);
 }
 
 int kernel_thread(void *arg)

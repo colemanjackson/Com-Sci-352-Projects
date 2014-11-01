@@ -1,5 +1,5 @@
-#ifndef LIB-ULT_H
-#define LIB-ULT_H
+#ifndef LIBULT_H
+#define LIBULT_H
 #include <stdio.h>
 #include <sched.h>
 #include <stdlib.h>
