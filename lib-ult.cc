@@ -10,7 +10,7 @@
 #define gettid()  syscall(SYS_gettid)
 
 using namespace std;
-//compile with g++ -omyprog main.c lib -ult.c -lpthread
+//compile with g++ -o myprog main.c lib-ult.c -lpthread
 // myprog is the name of my project, main.c can be the professor's test file
 //10-11 thursday, PEARSON 145
 

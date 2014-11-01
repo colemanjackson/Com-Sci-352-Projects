@@ -41,7 +41,7 @@ void do_something()
         uthread_exit();
 }
 
-main()
+int main()
 {
         int i;
         system_init(1);
