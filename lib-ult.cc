@@ -24,16 +24,15 @@ typedef struct threadInfo
 {
   ucontext_t *context;
   double time_run;
+  
 }thread_info;
 
-//semaphore to make sure running kernel threads are less than max kernel threads
 sem_t thread_lock;
-//semaphore to make sure only one thread is accessing the queue at a time
 sem_t queue_lock;
 //priority queue to store the structs
 priority_queue<thread_info*, vector<thread_info*>, CompareThreadInfo> pq;
 
-//This class tells the priority queue how to compare objects
+//comparator for thread info, necessary for priority queue.
 class CompareThreadInfo {
 public:
   bool operator()(thread_info& t1, thread_info& t2)
@@ -110,7 +109,7 @@ int uthread_create(void (*func)())
 
 void uthread_yield()
 {
-  if(pq.size()>0)
+  if(!pq.empty())
   {
         //get the new struct from the priority queue
     sem_wait(&queue_lock);
