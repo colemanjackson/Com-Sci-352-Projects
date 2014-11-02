@@ -49,7 +49,7 @@ int set_kernel_thread(void *args)
 {
     //run the user thread if there are enough kernel threads left(currently running - max running)
   sem_wait(&thread_lock);
-
+  printf("In SET KERNEL");
     //fetch a user thread from the queue
   sem_wait(&queue_lock);
   thread_info *shortest;
@@ -64,16 +64,17 @@ int set_kernel_thread(void *args)
 }
 
 void system_init(int max_number_of_klt)
-{
+{ printf("In System init\n");
  //initialize this semaphore with the value of max_number_of_klt so that it will keep track of how many threads are currently running andif we are allowed to start anymore running
   sem_init(&thread_lock, 0, max_number_of_klt);
   //initialize this semaphore with the value 1, because we only want 1 thread at a time to access the queue
   sem_init(&queue_lock, 0, 1);
+  printf("Exiting system init\n");
 }
 
 int uthread_create(void (*func)())
 {
-  cout << "In Uthread Create! \n";
+  printf("In Uthread Create! \n");
     //create a new struct to add to the queue
   thread_info *thread;
   thread=(thread_info *)malloc(sizeof(thread_info));
@@ -86,19 +87,19 @@ int uthread_create(void (*func)())
   //IF MALLOC ABOVE EVER RETURNS NULL, YOU FAILED SO RETURN -1
   if(thread == NULL || process == NULL)
   {
-    cerr << "Error, Malloc in uthread_create is NULL\n"
+    printf("Error, Malloc in uthread_create is NULL\n");
     return -1;
 
   }
 
   makecontext(process, func, 0);
-  cout << "Passed make context!"
+  printf("Passed make context!\n");
   //Add the new process to the queue
   thread->context = process;
   thread->time_run = 0;
-  cout << "thread->time_run = " << thread->time_run << "\n";
+  printf("thread->time_run = %d", thread->time_run);
   pq.push(thread);
-  cout << "push done! \n";
+  printf("push done! \n");
   //create a new kernel thread and run the highest priority thread from the queue
   void *child_stack;
   child_stack=(void *)malloc(16384); child_stack+=16383;
@@ -108,6 +109,7 @@ int uthread_create(void (*func)())
   }
   
   clone(set_kernel_thread, child_stack, CLONE_VM|CLONE_FILES, NULL);
+  printf("out of Uthread Create! \n");
   return 0;
 }
 
