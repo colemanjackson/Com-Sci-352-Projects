@@ -56,8 +56,10 @@ int set_kernel_thread(void *args)
   shortest=(thread_info *)malloc(sizeof(thread_info));
   ucontext_t *newContext;
   newContext = (ucontext_t*)malloc(sizeof(ucontext_t));
+  printf("Done mallocing in set kernel \n");
   shortest->context = newContext;
   shortest = pq.top();
+  printf("shortest has been popped off priority queue");
   pq.pop();
   sem_post(&queue_lock);
   printf("About to set context\n");
