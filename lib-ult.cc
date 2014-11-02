@@ -1,11 +1,13 @@
 #include "lib-ult.h"
+#include <sys/time.h>
+#include <sys/resource.h>
+#include <sys/syscall.h>
+#include <queue>
 #include <semaphore.h>
 #include <ucontext.h>
 #include <unistd.h>
-#include <sys/syscall.h>
-#include <queue>
-#include <sys/time.h>
-#include <sys/resource.h>
+
+
 
 #define gettid()  syscall(SYS_gettid)
 
@@ -29,7 +31,7 @@ sem_t thread_lock;
 //semaphore to make sure only one thread is accessing the queue at a time
 sem_t queue_lock;
 //priority queue to store the structs
-priority_queue<thread_info, vector<thread_info>, CompareThreadInfo> pq;
+priority_queue<thread_info*, vector<thread_info*>, CompareThreadInfo> pq;
 
 //This class tells the priority queue how to compare objects
 class CompareThreadInfo {
@@ -41,6 +43,26 @@ public:
   }
 };
 
+
+
+
+int set_kernel_thread(void *args)
+{
+    //run the user thread if there are enough kernel threads left(currently running - max running)
+  sem_wait(&thread_lock);
+
+    //fetch a user thread from the queue
+  sem_wait(&queue_lock);
+  thread_info *shortest;
+  shortest=(thread_info *)malloc(sizeof(thread_info));
+  ucontext_t *newContext;
+  newContext = (ucontext_t*)malloc(sizeof(ucontext_t));
+  shortest->context = newContext;
+  shortest = pq.top();
+  pq.pop();
+  sem_post(&queue_lock);
+  setcontext(shortest->context);
+}
 
 void system_init(int max_number_of_klt)
 {
@@ -61,9 +83,6 @@ int uthread_create(void (*func)())
     //create a process that will run func when it is called with"setcontext()" or "swapcontext()"
   process->uc_stack.ss_sp = malloc(16384);
   process->uc_stack.ss_size = 16384;
-
-
-
   //IF MALLOC ABOVE EVER RETURNS NULL, YOU FAILED SO RETURN -1
   if(thread == NULL || process == NULL)
   {
@@ -72,17 +91,19 @@ int uthread_create(void (*func)())
   }
 
   makecontext(process, func);
-
-    //Add the new process to the queue
+  //Add the new process to the queue
   thread->context = process;
   thread.time_run = 0;
   pq.push(thread);
-
-    //create a new kernel thread and run the highest priority thread from the queue
+  //create a new kernel thread and run the highest priority thread from the queue
   void *child_stack;
   child_stack=(void *)malloc(16384); child_stack+=16383;
-  clone(kernel_thread, child_stack, CLONE_VM|CLONE_FILES, NULL);
-
+  if(child_stack == NULL)
+  {
+    return -1;
+  }
+  
+  clone(set_kernel_thread, child_stack, CLONE_VM|CLONE_FILES, NULL);
   return 0;
 }
 
@@ -125,19 +146,4 @@ void uthread_exit()
 {
     //signal that a user thread has stopped and kill the current thread
   sem_post(&thread_lock);
-}
-
-int kernel_thread(void *arg)
-{
-    //run the user thread if there are enough kernel threads left(currently running - max running)
-  sem_wait(&thread_lock);
-
-    //fetch a user thread from the queue
-  sem_wait(&queue_lock);
-  thread_info *shortest = pq.top();
-  pq.pop();
-  sem_post(&queue_lock);
-
-    //change context to the thread you want to run
-  setcontext(shortest->context);
 }
