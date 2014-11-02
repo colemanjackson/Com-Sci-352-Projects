@@ -54,8 +54,8 @@ int set_kernel_thread(void *args)
   sem_wait(&queue_lock);
   thread_info *shortest;
   shortest=(thread_info *)malloc(sizeof(thread_info));
-  printf("Done mallocing in set kernel \n");
   shortest = pq.top();
+  printf("Done mallocing in set kernel \n");
 
   double timeCheck = shortest->time_run;
   printf("The time of the popped shortest is: %d", timeCheck);
