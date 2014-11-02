@@ -92,7 +92,7 @@ int uthread_create(void (*func)())
   makecontext(process, func, 0);
   //Add the new process to the queue
   thread->context = process;
-  thread.time_run = 0;
+  thread->time_run = 0;
   pq.push(thread);
   //create a new kernel thread and run the highest priority thread from the queue
   void *child_stack;
