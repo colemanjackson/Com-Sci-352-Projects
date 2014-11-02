@@ -57,12 +57,16 @@ int set_kernel_thread(void *args)
   ucontext_t *newContext;
   newContext = (ucontext_t*)malloc(sizeof(ucontext_t));
   printf("Done mallocing in set kernel \n");
+  shortest->context = newContext;
   shortest = pq.top();
+
+  double timeCheck = shortest->time_run;
+  printf("The time of the popped shortest is: %d", timeCheck)
   printf("shortest has been popped off priority queue");
   pq.pop();
   sem_post(&queue_lock);
   printf("About to set context\n");
-  ucontext_t* shortestContext = shortest->context;
+  ucontext_t shortestContext = shortest->context;
   setcontext(shortestContext);
   printf("Out of set context");
 }
