@@ -53,12 +53,7 @@ int set_kernel_thread(void *args)
     //fetch a user thread from the queue
   sem_wait(&queue_lock);
   thread_info *shortest;
-  shortest=(thread_info *)malloc(sizeof(thread_info));
-  ucontext_t *newContext;
-  newContext = (ucontext_t*)malloc(sizeof(ucontext_t));
-  printf("Done mallocing in set kernel \n");
-  shortest->context = newContext;
-  shortest = pq.top();
+  shortest= pq.top();
 
   double timeCheck = shortest->time_run;
   printf("The time of the popped shortest is: %d", timeCheck);
