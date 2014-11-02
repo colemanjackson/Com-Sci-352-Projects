@@ -101,7 +101,8 @@ int uthread_create(void (*func)())
   //Add the new process to the queue
   thread->context = process;
   thread->time_run = 0;
-  printf("thread->time_run = %d", thread->time_run);
+  int threadTime = thread->time_run;
+  printf("thread->time_run = %d", threadTime);
   pq.push(thread);
   printf("push done! \n");
   //create a new kernel thread and run the highest priority thread from the queue
