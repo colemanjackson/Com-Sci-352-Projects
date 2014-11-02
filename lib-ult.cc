@@ -53,7 +53,9 @@ int set_kernel_thread(void *args)
     //fetch a user thread from the queue
   sem_wait(&queue_lock);
   thread_info *shortest;
-  shortest= pq.top();
+  shortest=(thread_info *)malloc(sizeof(thread_info));
+  printf("Done mallocing in set kernel \n");
+  shortest = pq.top();
 
   double timeCheck = shortest->time_run;
   printf("The time of the popped shortest is: %d", timeCheck);
@@ -106,7 +108,8 @@ int uthread_create(void (*func)())
   printf("push done! \n");
   //create a new kernel thread and run the highest priority thread from the queue
   void *child_stack;
-  child_stack=(void *)malloc(16384); child_stack+=16383;
+  child_stack=(void *)malloc(16384); 
+  child_stack=16383;
   if(child_stack == NULL)
   {
     return -1;
@@ -131,11 +134,11 @@ void uthread_yield()
     contxt = (ucontext_t*) malloc(sizeof(ucontext_t));
     contxt->uc_stack.ss_sp = malloc(16384);
     contxt->uc_stack.ss_size = 16384;
-    int error = getcontext(contxt);
+    int errror = getcontext(contxt);
     if(error != 0)
     {
       printf("ERROR IN GETTING CONTEXT");
-
+      return -1;
     }
 
     //add the current context to a struct
