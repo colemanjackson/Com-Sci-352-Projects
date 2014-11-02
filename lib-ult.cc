@@ -73,6 +73,7 @@ void system_init(int max_number_of_klt)
 
 int uthread_create(void (*func)())
 {
+  cout << "In Uthread Create! \n";
     //create a new struct to add to the queue
   thread_info *thread;
   thread=(thread_info *)malloc(sizeof(thread_info));
@@ -85,15 +86,19 @@ int uthread_create(void (*func)())
   //IF MALLOC ABOVE EVER RETURNS NULL, YOU FAILED SO RETURN -1
   if(thread == NULL || process == NULL)
   {
+    cerr << "Error, Malloc in uthread_create is NULL\n"
     return -1;
 
   }
 
   makecontext(process, func, 0);
+  cout << "Passed make context!"
   //Add the new process to the queue
   thread->context = process;
   thread->time_run = 0;
+  cout << "thread->time_run = " << thread->time_run << "\n";
   pq.push(thread);
+  cout << "push done! \n";
   //create a new kernel thread and run the highest priority thread from the queue
   void *child_stack;
   child_stack=(void *)malloc(16384); child_stack+=16383;
