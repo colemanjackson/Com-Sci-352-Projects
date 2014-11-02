@@ -108,8 +108,7 @@ int uthread_create(void (*func)())
   printf("push done! \n");
   //create a new kernel thread and run the highest priority thread from the queue
   void *child_stack;
-  child_stack=(void *)malloc(16384); 
-  child_stack=16383;
+  child_stack=(void *)malloc(16384); child_stack+=16383;
   if(child_stack == NULL)
   {
     return -1;
