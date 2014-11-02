@@ -111,7 +111,8 @@ int uthread_create(void (*func)())
   printf("push done! \n");
   //create a new kernel thread and run the highest priority thread from the queue
   void *child_stack;
-  child_stack=(void *)malloc(16384); child_stack+=16384;
+  child_stack=(void *)malloc(16384); 
+  child_stack=16383;
   if(child_stack == NULL)
   {
     return -1;
@@ -136,7 +137,12 @@ void uthread_yield()
     contxt = (ucontext_t*) malloc(sizeof(ucontext_t));
     contxt->uc_stack.ss_sp = malloc(16384);
     contxt->uc_stack.ss_size = 16384;
-    getcontext(contxt);
+    int errror = getcontext(contxt);
+    if(error != 0)
+    {
+      printf("ERROR IN GETTING CONTEXT");
+      return -1;
+    }
 
     //add the current context to a struct
     thread_info *current_thread;
