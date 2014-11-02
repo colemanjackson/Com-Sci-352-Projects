@@ -24,7 +24,7 @@ typedef struct threadInfo
 {
   ucontext_t *context;
   double time_run;
-  
+
 }thread_info;
 
 sem_t thread_lock;
@@ -116,7 +116,6 @@ void uthread_yield()
     thread_info *shortest = pq.top();
     pq.pop();
     sem_post(&queue_lock);
-        //create a context for the current thread MAY NEED TO CHANGE THE NAME OF PROCESS BECAUSE IT IS USED ABOVE
     ucontext_t *contxt;
     contxt = (ucontext_t*) malloc(sizeof(ucontext_t));
     contxt->uc_stack.ss_sp = malloc(16384);
@@ -131,7 +130,7 @@ void uthread_yield()
     struct rusage usage;
     int ret;
     ret = getrusage(who, &usage);
-    current_thread.time-run = usage->ru_stime->tv_sec;
+    current_thread->time_run = usage.ru_stime.tv_sec;
 
     //add the current context back to the priority queue
     pq.push(current_thread);
