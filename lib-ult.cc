@@ -63,7 +63,8 @@ int set_kernel_thread(void *args)
   pq.pop();
   sem_post(&queue_lock);
   printf("About to set context\n");
-  setcontext(shortest->context);
+  ucontext_t *shortestContext = shortest->context;
+  setcontext(shortestContext);
   printf("Out of set context");
 }
 
