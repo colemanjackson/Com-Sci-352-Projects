@@ -137,7 +137,6 @@ void uthread_yield()
     if(error != 0)
     {
       printf("ERROR IN GETTING CONTEXT");
-      return -1;
     }
 
     //add the current context to a struct
