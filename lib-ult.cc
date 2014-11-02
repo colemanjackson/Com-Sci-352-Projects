@@ -49,7 +49,7 @@ int set_kernel_thread(void *args)
 {
     //run the user thread if there are enough kernel threads left(currently running - max running)
   sem_wait(&thread_lock);
-  printf("In SET KERNEL");
+  printf("In SET KERNEL\n");
     //fetch a user thread from the queue
   sem_wait(&queue_lock);
   thread_info *shortest;
@@ -60,7 +60,9 @@ int set_kernel_thread(void *args)
   shortest = pq.top();
   pq.pop();
   sem_post(&queue_lock);
+  printf("About to set context\n");
   setcontext(shortest->context);
+  printf("Out of set context");
 }
 
 void system_init(int max_number_of_klt)
