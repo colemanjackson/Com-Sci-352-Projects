@@ -100,7 +100,7 @@ int uthread_create(void (*func)())
 
   }
 
-  makecontext(process, func, 0);
+  makecontext(process, func, 0, 0);
   printf("Passed make context!\n");
   //Add the new process to the queue
   thread->context = process;
