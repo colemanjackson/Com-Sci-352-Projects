@@ -132,11 +132,11 @@ void uthread_yield()
     contxt = (ucontext_t*) malloc(sizeof(ucontext_t));
     contxt->uc_stack.ss_sp = malloc(16384);
     contxt->uc_stack.ss_size = 16384;
-    int errror = getcontext(contxt);
+    int error = getcontext(contxt);
     if(error != 0)
     {
       printf("ERROR IN GETTING CONTEXT");
-      return -1;
+
     }
 
     //add the current context to a struct
