@@ -29,21 +29,21 @@ typedef struct threadInfo
 
 sem_t thread_lock;
 sem_t queue_lock;
-//priority queue to store the structs
-priority_queue<thread_info*, vector<thread_info*>, CompareThreadInfo> pq;
+
 
 //comparator for thread info, necessary for priority queue.
 class CompareThreadInfo {
 public:
-  bool operator()(thread_info& t1, thread_info& t2)
+  bool operator()(thread_info* t1, thread_info* t2)
   {
-    if (t1.time_run < t2.time_run) return true;
+    if (t1->time_run < t2->time_run) return true;
     return false;
   }
 };
 
 
-
+//priority queue to store the structs
+priority_queue<thread_info*, vector<thread_info*>, CompareThreadInfo> pq;
 
 int set_kernel_thread(void *args)
 {
@@ -89,7 +89,7 @@ int uthread_create(void (*func)())
 
   }
 
-  makecontext(process, func);
+  makecontext(process, func, 0);
   //Add the new process to the queue
   thread->context = process;
   thread.time_run = 0;
@@ -109,7 +109,7 @@ int uthread_create(void (*func)())
 
 void uthread_yield()
 {
-  if(!pq.empty())
+  if(pq.empty() == false)
   {
         //get the new struct from the priority queue
     sem_wait(&queue_lock);
