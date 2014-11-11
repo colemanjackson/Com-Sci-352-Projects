@@ -27,8 +27,8 @@ typedef struct threadInfo
 
 }thread_info;
 
-sem_t thread_lock;
-sem_t queue_lock;
+sem_t sem_thread_lock;
+sem_t sem_queue_lock;
 
 
 //comparator for thread info, necessary for priority queue.
@@ -45,47 +45,48 @@ public:
 //priority queue to store the structs
 priority_queue<thread_info*, vector<thread_info*>, CompareThreadInfo> pq;
 
-int set_kernel_thread(void *args)
+int new_kernel_thread(void *args)
 {
-    //run the user thread if there are enough kernel threads left(currently running - max running)
-  sem_wait(&thread_lock);
-  printf("In SET KERNEL\n");
-    //fetch a user thread from the queue
-  sem_wait(&queue_lock);
-  thread_info *shortest;
-  shortest=(thread_info *)malloc(sizeof(thread_info));
-  shortest = pq.top();
-  printf("Done mallocing in set kernel \n");
+  sem_wait(&sem_thread_lock);
+  sem_wait(&sem_queue_lock);
 
-  double timeCheck = shortest->time_run;
-  printf("The time of the popped shortest is: %d", timeCheck);
-  printf("shortest has been popped off priority queue");
+
+  thread_info *shortest_run;
+  shortest_run=(thread_info *)malloc(sizeof(thread_info));
+  ucontext_t *newContext;
+  newContext = (ucontext_t*)malloc(sizeof(ucontext_t));
+  shortest_run->context = newContext;
+
+  //perform actual copy of thread_info struct
+  *shortest_run = *pq.top();
+
+  //testing next line. delete it
+  *newContext = *(shortest_run->context);
+
+  //remove the used thread info from the queue
   pq.pop();
-  sem_post(&queue_lock);
-  printf("About to set context\n");
-  ucontext_t *shortestContext = shortest->context;
-  setcontext(shortestContext);
-  printf("Out of set context");
-}
+
+  sem_post(&sem_queue_lock);
+
+  //setcontext(shortest_run->context);
+  setcontext(newContext);}
 
 void system_init(int max_number_of_klt)
 { printf("In System init\n");
- //initialize this semaphore with the value of max_number_of_klt so that it will keep track of how many threads are currently running andif we are allowed to start anymore running
-  sem_init(&thread_lock, 0, max_number_of_klt);
-  //initialize this semaphore with the value 1, because we only want 1 thread at a time to access the queue
-  sem_init(&queue_lock, 0, 1);
+  sem_init(&sem_thread_lock, 0, max_number_of_klt);
+  sem_init(&sem_queue_lock, 0, 1);
   printf("Exiting system init\n");
 }
 
 int uthread_create(void (*func)())
 {
-  printf("In Uthread Create! \n");
-    //create a new struct to add to the queue
+  //new struct
   thread_info *thread;
   thread=(thread_info *)malloc(sizeof(thread_info));
-    //get the memory you need to store a ucontext_t
   ucontext_t *process;
   process = (ucontext_t*) malloc(sizeof(ucontext_t));
+  getcontext(process);
+
     //create a process that will run func when it is called with"setcontext()" or "swapcontext()"
   process->uc_stack.ss_sp = malloc(16384);
   process->uc_stack.ss_size = 16384;
@@ -98,14 +99,10 @@ int uthread_create(void (*func)())
   }
 
   makecontext(process, func, 0, 0);
-  printf("Passed make context!\n");
   //Add the new process to the queue
   thread->context = process;
   thread->time_run = 0;
-  int threadTime = thread->time_run;
-  printf("thread->time_run = %d", threadTime);
   pq.push(thread);
-  printf("push done! \n");
   //create a new kernel thread and run the highest priority thread from the queue
   void *child_stack;
   child_stack=(void *)malloc(16384); child_stack+=16383;
@@ -114,8 +111,7 @@ int uthread_create(void (*func)())
     return -1;
   }
   
-  clone(set_kernel_thread, child_stack, CLONE_VM|CLONE_FILES, NULL);
-  printf("out of Uthread Create! \n");
+  clone(new_kernel_thread, child_stack, CLONE_VM|CLONE_FILES, NULL);
   return 0;
 }
 
@@ -125,20 +121,15 @@ void uthread_yield()
   if(pq.empty() == false)
   {
         //get the new struct from the priority queue
-    sem_wait(&queue_lock);
+    sem_wait(&sem_queue_lock);
     thread_info *shortest = pq.top();
     pq.pop();
-    sem_post(&queue_lock);
+    sem_post(&sem_queue_lock);
     ucontext_t *contxt;
     contxt = (ucontext_t*) malloc(sizeof(ucontext_t));
     contxt->uc_stack.ss_sp = malloc(16384);
     contxt->uc_stack.ss_size = 16384;
-    int error = getcontext(contxt);
-    if(error != 0)
-    {
-      printf("ERROR IN GETTING CONTEXT");
-    }
-
+    
     //add the current context to a struct
     thread_info *current_thread;
     current_thread = (thread_info*)malloc(sizeof(thread_info));
@@ -159,6 +150,6 @@ void uthread_yield()
 
 void uthread_exit()
 {
-    //signal that a user thread has stopped and kill the current thread
-  sem_post(&thread_lock);
+  sem_post(&sem_thread_lock);
+  while(1);
 }
