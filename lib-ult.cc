@@ -99,7 +99,7 @@ int uthread_create(void (*func)())
 
   }
 
-  makecontext(process, func, 0, 0);
+  makecontext(process, func, 0);
   //Add the new process to the queue
   thread->context = process;
   thread->time_run = 0;
@@ -121,20 +121,22 @@ void uthread_yield()
 {
   if(pq.empty() == false)
   {
-        //get the new struct from the priority queue
-    sem_wait(&sem_queue_lock);
-    thread_info *shortest = pq.top();
+        //get the new struct from the priority queue and yield
+    sem_wait(&queue_lock);
+    thread_info *shortest_run = pq.top();
     pq.pop();
-    sem_post(&sem_queue_lock);
-    ucontext_t *contxt;
-    contxt = (ucontext_t*) malloc(sizeof(ucontext_t));
-    contxt->uc_stack.ss_sp = malloc(16384);
-    contxt->uc_stack.ss_size = 16384;
-    
+    sem_post(&queue_lock);
+    //the new context that will be put in the new thread_info to put into the queue
+    ucontext_t *context;
+    context = (ucontext_t*) malloc(sizeof(ucontext_t));
+    context->uc_stack.ss_sp = malloc(16384);
+    context->uc_stack.ss_size = 16384;
+    //getcontext(context);
+
     //add the current context to a struct
     thread_info *current_thread;
     current_thread = (thread_info*)malloc(sizeof(thread_info));
-    current_thread->context = contxt;
+    current_thread->context = context;
     int who = RUSAGE_THREAD;
     struct rusage usage;
     int ret;
@@ -145,7 +147,9 @@ void uthread_yield()
     pq.push(current_thread);
 
     //set the context to the one that came from the priority queue
-    setcontext(shortest->context);
+    //setcontext(shortest_run->context);
+
+    swapcontext(context, shortest_run->context); 
   }
 }
 
