@@ -28,7 +28,7 @@ typedef struct threadInfo
 }thread_info;
 
 sem_t sem_thread_lock;
-sem_t sem_queue_lock;
+sem_t sem_sem_queue_lock;
 
 
 //comparator for thread info, necessary for priority queue.
@@ -48,7 +48,7 @@ priority_queue<thread_info*, vector<thread_info*>, CompareThreadInfo> pq;
 int new_kernel_thread(void *args)
 {
   sem_wait(&sem_thread_lock);
-  sem_wait(&sem_queue_lock);
+  sem_wait(&sem_sem_queue_lock);
 
 
   thread_info *shortest_run;
@@ -66,7 +66,7 @@ int new_kernel_thread(void *args)
   //remove the used thread info from the queue
   pq.pop();
 
-  sem_post(&sem_queue_lock);
+  sem_post(&sem_sem_queue_lock);
 
   //setcontext(shortest_run->context);
   setcontext(newContext);
@@ -76,7 +76,7 @@ void system_init(int max_number_of_klt)
 {
 
   sem_init(&sem_thread_lock, 0, max_number_of_klt);
-  sem_init(&sem_queue_lock, 0, 1);
+  sem_init(&sem_sem_queue_lock, 0, 1);
 }
 
 int uthread_create(void (*func)())
@@ -122,10 +122,10 @@ void uthread_yield()
   if(pq.empty() == false)
   {
         //get the new struct from the priority queue and yield
-    sem_wait(&queue_lock);
+    sem_wait(&sem_queue_lock);
     thread_info *shortest_run = pq.top();
     pq.pop();
-    sem_post(&queue_lock);
+    sem_post(&sem_queue_lock);
     //the new context that will be put in the new thread_info to put into the queue
     ucontext_t *context;
     context = (ucontext_t*) malloc(sizeof(ucontext_t));
