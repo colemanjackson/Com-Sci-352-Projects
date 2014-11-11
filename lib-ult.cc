@@ -122,10 +122,10 @@ void uthread_yield()
   if(pq.empty() == false)
   {
         //get the new struct from the priority queue and yield
-    sem_wait(&sem_queue_lock);
+    sem_wait(&sem_sem_queue_lock);
     thread_info *shortest_run = pq.top();
     pq.pop();
-    sem_post(&sem_queue_lock);
+    sem_post(&sem_sem_queue_lock);
     //the new context that will be put in the new thread_info to put into the queue
     ucontext_t *context;
     context = (ucontext_t*) malloc(sizeof(ucontext_t));
