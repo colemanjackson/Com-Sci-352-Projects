@@ -69,13 +69,14 @@ int new_kernel_thread(void *args)
   sem_post(&sem_queue_lock);
 
   //setcontext(shortest_run->context);
-  setcontext(newContext);}
+  setcontext(newContext);
+}
 
 void system_init(int max_number_of_klt)
-{ printf("In System init\n");
+{
+
   sem_init(&sem_thread_lock, 0, max_number_of_klt);
   sem_init(&sem_queue_lock, 0, 1);
-  printf("Exiting system init\n");
 }
 
 int uthread_create(void (*func)())
@@ -105,7 +106,7 @@ int uthread_create(void (*func)())
   pq.push(thread);
   //create a new kernel thread and run the highest priority thread from the queue
   void *child_stack;
-  child_stack=(void *)malloc(16384); child_stack+=16383;
+  child_stack=(void *)malloc(16384); child_stack+=16384;
   if(child_stack == NULL)
   {
     return -1;
